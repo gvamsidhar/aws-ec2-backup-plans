@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Backup Plans template for ec2 backups"
+Metadata:
+  version: 1.0.0
+Parameters:
+  EC2BackupKey:
+    Type: String
+    Description: 'The EC2 Backup plan will backups EC2 instances with this key'
+  12hBackup7DayRetention:
+    Type: String
+    Description: 'The EC2 Backup plan will backups EC2 instances every 12hours with a 7 day retention'
+  DailyBackup7DayRetention:
+    Type: String
+    Description: 'The EC2 Backup plan will backups EC2 instances daily with a 7 day retention'
+  12hBackup15DayRetention:
+    Type: String
+    Description: 'The EC2 Backup plan will backups EC2 instances every 12hours with a 15 day retention'
+  DailyBackup15DayRetention:
+    Type: String
+    Description: 'The EC2 Backup plan will backups EC2 instances Daily with a 15 day retention'
+
+Resources:
+  EC2BackupVault:
+    Type: "AWS::Backup::BackupVault"
+    Properties:
+      BackupVaultName: "ec2-backup-vault"
+
+  EC2Every12HBackupPlan7DayRetention:
+    Type: "AWS::Backup::BackupPlan"
+    Properties:
+      BackupPlan:
+        AdvancedBackupSettings:
+          - ResourceType: 'EC2'
+            BackupOptions:
+              WindowsVSS: "enabled" # This will enable the WindowsVSS with the BackupPlan
+        BackupPlanName: "EC2BackupPlan-12h-7Day-r"
+        BackupPlanRule:
+          -
+            RuleName: "RuleFor12hBackups7Day-R"
+            TargetBackupVault: !Ref EC2BackupVault
+            ScheduleExpression: "cron(30 4/12 * * ? *)"
+            StartWindowMinutes: 60
+            Lifecycle:
+              DeleteAfterDays: 7
+
+  EC2DailyBackupPlan7DayRetention:
+    Type: "AWS::Backup::BackupPlan"
+    Properties:
+      BackupPlan:
+        AdvancedBackupSettings:
+          -
+            ResourceType: 'EC2'
+            BackupOptions:
+              WindowsVSS: "enabled" # This will enable the WindowsVSS with the BackupPlan
+        BackupPlanName: "EC2BackupPlan-Daily-7Day-r"
+        BackupPlanRule:
+          -
+            RuleName: "RuleForDailyBackups7Day-R"
+            TargetBackupVault: !Ref EC2BackupVault
+            ScheduleExpression: "cron(30 4 * * ? *)"
+            StartWindowMinutes: 60
+            Lifecycle:
+              DeleteAfterDays: 7
+
+  EC2Every12HBackupPlan15DayRetention:
+    Type: "AWS::Backup::BackupPlan"
+    Properties:
+      BackupPlan:
+        AdvancedBackupSettings:
+          -
+            ResourceType: "EC2"
+            BackupOptions:
+              WindowsVSS: "enabled" # This will enable the WindowsVSS with the BackupPlan
+        BackupPlanName: "EC2BackupPlan-12h-15Day-r"
+        BackupPlanRule:
+          -
+            RuleName: "RuleFor12hBackups15Day-R"
+            TargetBackupVault: !Ref EC2BackupVault
+            ScheduleExpression: "cron(30 4/12 * * ? *)"
+            StartWindowMinutes: 60
+            Lifecycle:
+              DeleteAfterDays: 15
+
+  EC2DailyBackupPlan15DayRetention:
+    Type: "AWS::Backup::BackupPlan"
+    Properties:
+      BackupPlan:
+        AdvancedBackupSettings:
+          -
+            ResourceType: "EC2"
+            BackupOptions:
+              WindowsVSS: "enabled" # This will enable the WindowsVSS with the BackupPlan
+        BackupPlanName: "EC2BackupPlan-Daily-15Day-r"
+        BackupPlanRule:
+          -
+            RuleName: "RuleForDailyBackups15Day-R"
+            TargetBackupVault: !Ref EC2BackupVault
+            ScheduleExpression: "cron(30 4 * * ? *)"
+            StartWindowMinutes: 60
+            Lifecycle:
+              DeleteAfterDays: 15
+
+  TagBasedBackupSelection12hRetention7Day:
+    Type: "AWS::Backup::BackupSelection"
+    Properties:
+      BackupSelection:
+        SelectionName: "TagBasedBackupSelection12hRetention7Day"
+        IamRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-ec2-backup-service-role"
+        ListOfTags:
+          -
+            ConditionType: "STRINGEQUALS"
+            ConditionKey: !Ref EC2BackupKey
+            ConditionValue: !Ref 12hBackup7DayRetention
+      BackupPlanId: !Ref EC2Every12HBackupPlan7DayRetention
+
+  TagBasedBackupSelectionDaily7DayRetention:
+    Type: "AWS::Backup::BackupSelection"
+    Properties:
+      BackupSelection:
+        SelectionName: "TagBasedBackupSelectionDaily7DayRetention"
+        IamRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-ec2-backup-service-role"
+        ListOfTags:
+          -
+            ConditionType: "STRINGEQUALS"
+            ConditionKey: !Ref EC2BackupKey
+            ConditionValue: !Ref DailyBackup7DayRetention
+      BackupPlanId: !Ref EC2DailyBackupPlan7DayRetention
+
+  TagBasedBackupSelection12hRetention15Day:
+    Type: "AWS::Backup::BackupSelection"
+    Properties:
+      BackupSelection:
+        SelectionName: "TagBasedBackupSelection12hRetention15Day"
+        IamRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-ec2-backup-service-role"
+        ListOfTags:
+          -
+            ConditionType: "STRINGEQUALS"
+            ConditionKey: !Ref EC2BackupKey
+            ConditionValue: !Ref 12hBackup15DayRetention
+      BackupPlanId: !Ref EC2Every12HBackupPlan15DayRetention
+
+  TagBasedBackupSelectionDaily15DayRetention:
+    Type: "AWS::Backup::BackupSelection"
+    Properties:
+      BackupSelection:
+        SelectionName: "TagBasedBackupSelectionDaily15DayRetention"
+        IamRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-ec2-backup-service-role"
+        ListOfTags:
+          -
+            ConditionType: "STRINGEQUALS"
+            ConditionKey: !Ref EC2BackupKey
+            ConditionValue: !Ref DailyBackup15DayRetention
